@@ -1,16 +1,18 @@
 from enum import Enum
 from pathlib import Path
+import random
+import time
 from typing import Optional
 
 from starknet_py.common import create_compiled_contract
-from starknet_py.contract import Contract, DeclareResult
-from starknet_py.net import AccountClient, KeyPair
+from starknet_py.contract import Contract
+from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import CustomGatewayUrls, Network
 from starkware.python.utils import from_bytes
-from starkware.starknet.public.abi import AbiType
 from utils import int_16
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 # Private StarkNet
 PSN_FEEDER_GATEWAY_URL = "https://potc-testnet.starknet.io/feeder_gateway"
@@ -25,6 +27,9 @@ UPGRADE_DELAY = 0
 EIC_HASH = 0
 NOT_FINAL = 0
 
+
+def get_random_max_fee(start=1e16, end=1e17) -> int:
+    return random.randint(start, end)
 
 # For matching existing chainId type
 class CustomStarknetChainId(Enum):
@@ -54,21 +59,20 @@ def get_account_client(
 ):
     client = GatewayClient(net=net)
     key_pair = KeyPair.from_private_key(key=int_16(account_key))
-    account_client = AccountClient(
+    account_client = Account(
         client=client,
         address=account_address,
         key_pair=key_pair,
-        chain=chain,
-        supported_tx_version=tx_version,
+        chain=chain
     )
     return account_client
 
 
-async def deploy_with_proxy(name: str, admin_account_client, init_vector) -> Contract:
+async def deploy_with_proxy(name: str, admin_account, init_vector) -> Contract:
     # Declare implementation
     compiled_contract = get_compiled_contract(name)
     declare_result = await Contract.declare(
-        account=admin_account_client, compiled_contract=compiled_contract, max_fee=int(1e16)
+        account=admin_account, compiled_contract=compiled_contract, max_fee=get_random_max_fee()
     )
     print(f"{name} class hash:", hex(declare_result.class_hash))
     print(f"{name} declare tx hash:", hex(declare_result.hash))
@@ -78,7 +82,7 @@ async def deploy_with_proxy(name: str, admin_account_client, init_vector) -> Con
     # Declare proxy
     compiled_proxy_contract = get_compiled_contract("proxy")
     proxy_declare_result = await Contract.declare(
-        account=admin_account_client, compiled_contract=compiled_proxy_contract, max_fee=int(1e16)
+        account=admin_account, compiled_contract=compiled_proxy_contract, max_fee=get_random_max_fee()
     )
     print("Proxy class hash:", hex(proxy_declare_result.class_hash))
     print("Proxy declare tx hash:", hex(proxy_declare_result.hash))
@@ -90,7 +94,7 @@ async def deploy_with_proxy(name: str, admin_account_client, init_vector) -> Con
     proxy_deploy_result = await proxy_declare_result.deploy(
         constructor_args=[UPGRADE_DELAY],
         deployer_address=UNIVERSAL_DEPLOYER_ADDRESS,
-        max_fee=int(1e16),
+        max_fee=get_random_max_fee(),
     )
     print(proxy_deploy_result)
     print("Proxy contract address:", hex(proxy_deploy_result.deployed_contract.address))
@@ -101,13 +105,13 @@ async def deploy_with_proxy(name: str, admin_account_client, init_vector) -> Con
 
     proxy_contract = Contract(
         address=proxy_deploy_result.deployed_contract.address,
-        client=admin_account_client,
+        provider=admin_account,
         abi=create_compiled_contract(None, compiled_proxy_contract).abi,
     )
     print("Proxy contract is deployed!")
 
     # Init governance
-    init_governance_invoke = await proxy_contract.functions["init_governance"].invoke(max_fee=int(1e16))
+    init_governance_invoke = await proxy_contract.functions["init_governance"].invoke(max_fee=get_random_max_fee())
     print("Waiting for init_governance tx to be accepted...", hex(init_governance_invoke.hash))
     await init_governance_invoke.wait_for_acceptance(wait_for_accept=True)
 
@@ -120,7 +124,7 @@ async def deploy_with_proxy(name: str, admin_account_client, init_vector) -> Con
     ]
     add_implementation_invoke = await proxy_contract.functions["add_implementation"].invoke(
         *implementation_data,
-        max_fee=int(1e16)
+        max_fee=get_random_max_fee()
     )
     print("Waiting for add_implementation tx to be accepted...", hex(add_implementation_invoke.hash))
     await add_implementation_invoke.wait_for_acceptance(wait_for_accept=True)
