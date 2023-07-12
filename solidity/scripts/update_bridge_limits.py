@@ -4,8 +4,12 @@ from brownie import Contract, StarknetERC20Bridge, accounts
 
 
 L1_ADMIN_PRIVATE_KEY = os.environ.get("PARACLEAR_L1_ADMIN_PRIVATE_KEY")
+# https://api.testnet.paradex.trade/v1/system/config
+# bridged_tokens/decimals = 6
 MAX_DEPOSIT = 100_000 * 10**6
 MAX_TOTAL_BALANCE = 10_000_000 * 10**6
+# https://api.testnet.paradex.trade/v1/system/config
+# bridged_tokens/l1_bridge_address
 PROXY_BRIDGE_ADDRESS = ""
 
 def main():
