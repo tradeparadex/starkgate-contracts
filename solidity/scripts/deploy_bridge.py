@@ -12,8 +12,8 @@ L2_BRIDGE_ADDRESS = os.environ.get("PARACLEAR_L2_BRIDGE_ADDRESS")
 # Not needed but the contract initializer expects at least one address for it
 # even though the value of numOfSubContracts is set to 0. #contracts.StarknetTokenBridge.sol LN50.
 EIC_CONTRACT_PLACEHOLDER = "0x0000000000000000000000000000000000000000"
-MAX_DEPOSIT = 2**256 - 1
-MAX_TOTAL_BALANCE = 2**256 - 1
+MAX_DEPOSIT = 100_000 * 10**6
+MAX_TOTAL_BALANCE = 10_000_000 * 10**6
 
 def main():
     """
