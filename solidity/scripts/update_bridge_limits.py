@@ -10,7 +10,7 @@ MAX_DEPOSIT = 100_000 * 10**6
 MAX_TOTAL_BALANCE = 10_000_000 * 10**6
 # https://api.testnet.paradex.trade/v1/system/config
 # bridged_tokens/l1_bridge_address
-PROXY_BRIDGE_ADDRESS = ""
+PROXY_BRIDGE_ADDRESS = os.environ.get("PROXY_BRIDGE_ADDRESS")
 
 def main():
     """
