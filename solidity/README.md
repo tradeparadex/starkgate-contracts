@@ -55,6 +55,16 @@ export AMOUNT=<AMOUNT_TO_BE_MINTED> #(Will get transformed to the decimal precis
 brownie run scripts/mint_tokens.py --network goerli
 ```
 
+Update bridge limits
+
+```bash
+export WEB3_INFURA_PROJECT_ID=<INFURA-BRIDGE-PROJECT-ID>
+export PARACLEAR_L1_ADMIN_PRIVATE_KEY=<L1_USDC_ADMIN_PRIVATE_KEY>
+export PROXY_BRIDGE_ADDRESS=<BRIDGE ADDRESS>
+brownie run scripts/update_bridge_limits.py --network goerli
+```
+
+
 To verify contracts on Etherscan, you need to set the following environment variables:
 
 ```bash
