@@ -23,7 +23,7 @@ eth-keys==0.3.4
 eth-rlp==0.2.1
 eth-typing==2.3.0
 eth-utils==1.9.5
-fastecdsa==2.2.3
+fastecdsa==2.3.2
 Flask==2.0.3
 Flask-Cors==3.0.10
 frozendict==1.2
