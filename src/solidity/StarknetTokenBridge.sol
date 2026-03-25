@@ -89,6 +89,7 @@ contract StarknetTokenBridge is
     );
     event WithdrawalLimitEnabled(address indexed sender, address indexed token);
     event WithdrawalLimitDisabled(address indexed sender, address indexed token);
+    event VaultRouted(address indexed token, address indexed vault, uint256 amount, bool isDeposit);
     uint256 constant N_DEPOSIT_PAYLOAD_ARGS = 5;
     uint256 constant DEPOSIT_MESSAGE_FIXED_SIZE = 1;
 
@@ -152,12 +153,23 @@ contract StarknetTokenBridge is
         return Fees.estimateEnrollmentFee();
     }
 
+    function _vaultFor(address token) private view returns (address) {
+        address vault = mscaVault();
+        return (vault != address(0) && token == mscaVaultToken()) ? vault : address(0);
+    }
+
     // Virtual functions.
     function acceptDeposit(address token, uint256 amount) internal virtual returns (uint256) {
         Fees.checkFee(msg.value);
-        uint256 currentBalance = IERC20(token).balanceOf(address(this));
+        address vault = _vaultFor(token);
+        address balanceHolder = vault != address(0) ? vault : address(this);
+        uint256 currentBalance = IERC20(token).balanceOf(balanceHolder);
         require(currentBalance + amount <= getMaxTotalBalance(token), "MAX_BALANCE_EXCEEDED");
         Transfers.transferIn(token, msg.sender, amount);
+        if (vault != address(0)) {
+            Transfers.transferOut(token, vault, amount);
+            emit VaultRouted(token, vault, amount, true);
+        }
         return msg.value;
     }
 
@@ -166,6 +178,11 @@ contract StarknetTokenBridge is
         uint256 amount,
         address recipient
     ) internal virtual {
+        address vault = _vaultFor(token);
+        if (vault != address(0)) {
+            Transfers.transferIn(token, vault, amount);
+            emit VaultRouted(token, vault, amount, false);
+        }
         Transfers.transferOut(token, recipient, amount);
     }
 
@@ -357,6 +374,26 @@ contract StarknetTokenBridge is
     function disableWithdrawalLimit(address token) external onlySecurityAdmin {
         tokenSettings()[token].withdrawalLimitApplied = false;
         emit WithdrawalLimitDisabled(msg.sender, token);
+    }
+
+    function getMscaVault() external view returns (address) {
+        return mscaVault();
+    }
+
+    function getMscaVaultToken() external view returns (address) {
+        return mscaVaultToken();
+    }
+
+    /**
+       Returns the vault's current ERC-20 allowance for the bridge.
+       If no vault is configured, returns type(uint256).max.
+       Useful for off-chain monitoring to detect allowance issues before withdrawals fail.
+     */
+    function getMscaVaultAllowance() external view returns (uint256) {
+        address vault = mscaVault();
+        address token = mscaVaultToken();
+        if (vault == address(0) || token == address(0)) return type(uint256).max;
+        return IERC20(token).allowance(vault, address(this));
     }
 
     /**

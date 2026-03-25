@@ -11,6 +11,8 @@ abstract contract StarknetTokenStorage {
     string internal constant MANAGER_TAG = "STARKNET_TOKEN_BRIDGE_MANAGER_SLOT_TAG";
     string internal constant MESSAGING_CONTRACT_TAG = "STARKNET_TOKEN_BRIDGE_MESSAGING_CONTRACT";
     string internal constant DEPOSITOR_ADDRESSES_TAG = "STARKNET_TOKEN_BRIDGE_DEPOSITOR_ADDRESSES";
+    string internal constant MSCA_VAULT_TAG = "STARKNET_TOKEN_BRIDGE_MSCA_VAULT";
+    string internal constant MSCA_VAULT_TOKEN_TAG = "STARKNET_TOKEN_BRIDGE_MSCA_VAULT_TOKEN";
 
     enum TokenStatus {
         Unknown,
@@ -65,5 +67,21 @@ abstract contract StarknetTokenStorage {
 
     function messagingContract(address contract_) internal {
         NamedStorage.setAddressValueOnce(MESSAGING_CONTRACT_TAG, contract_);
+    }
+
+    function mscaVault() internal view returns (address) {
+        return NamedStorage.getAddressValue(MSCA_VAULT_TAG);
+    }
+
+    function mscaVault(address vault) internal {
+        NamedStorage.setAddressValue(MSCA_VAULT_TAG, vault);
+    }
+
+    function mscaVaultToken() internal view returns (address) {
+        return NamedStorage.getAddressValue(MSCA_VAULT_TOKEN_TAG);
+    }
+
+    function mscaVaultToken(address token) internal {
+        NamedStorage.setAddressValue(MSCA_VAULT_TOKEN_TAG, token);
     }
 }
